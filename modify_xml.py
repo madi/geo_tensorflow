@@ -1,3 +1,9 @@
+# coding: utf-8
+
+__author__ = "Margherita Di Leo"
+__license__ = "GPL v.3"
+__version__ = "0.1"
+__email__ = "dileomargherita@gmail.com"
 
 import xml.etree.ElementTree as ET
 import os
