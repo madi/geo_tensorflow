@@ -11,18 +11,13 @@ import os
 #FILENAME = ".."
 
 # Source folder
-FILEPATH = '/run/media/madi/TOSHIBA EXT/DMC/jpg_coarser'
+FILEPATH = '/run/media/madi/TOSHIBA EXT/DMC/jpg_subset/'
 # Destination folder
-DESTPATH = '/run/media/madi/TOSHIBA EXT/DMC/jpg_coarser/modified'
+DESTPATH = '/run/media/madi/TOSHIBA EXT/DMC/jpg_coarser/'
 # Original resolution
 RES_ORIGINAL = 0.15
 # Current resolution
 RES_CURRENT  = 0.60
-
-#-----------------------------------------------------------------------
-
-factor = RES_CURRENT / RES_ORIGINAL
-os.chdir(FILEPATH)
 
 #-----------------------------------------------------------------------
 
@@ -36,8 +31,8 @@ def CreateFileList(FILEPATH):
     
 #-----------------------------------------------------------------------
 
-def updateXml(FILENAME, DESTPATH):
-    tree = ET.parse(FILENAME)
+def updateXml(FILENAME, FILEPATH, DESTPATH):
+    tree = ET.parse(FILEPATH + FILENAME)
     root = tree.getroot()
 
     # Update size of current image
@@ -83,12 +78,15 @@ def updateXml(FILENAME, DESTPATH):
 
 if __name__ == "__main__":
     
+    factor = RES_CURRENT / RES_ORIGINAL
+    os.chdir(FILEPATH)
+    
     # Loop over files in source folders
     fileList = []
     
     fileList = CreateFileList(FILEPATH)
     for filename in fileList:
-        updateXml(filename, DESTPATH)
+        updateXml(filename, FILEPATH, DESTPATH)
         
     print "Updated xml files saved in ", DESTPATH
     
