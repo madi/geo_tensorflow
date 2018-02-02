@@ -88,7 +88,7 @@ if __name__ == "__main__":
     
     fileList = CreateFileList(FILEPATH)
     for filename in fileList:
-        updateXml(filename, FILEPATH)
+        updateXml(filename, DESTPATH)
         
     print "Updated xml files saved in ", DESTPATH
     
