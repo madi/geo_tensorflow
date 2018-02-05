@@ -11,9 +11,9 @@ import os
 #FILENAME = ".."
 
 # Source folder
-FILEPATH = '/run/media/madi/TOSHIBA EXT/DMC/jpg_subset/'
+FILEPATH = '/run/media/madi/TOSHIBA EXT/DMC/jpg_subset/' + os.sep
 # Destination folder
-DESTPATH = '/run/media/madi/TOSHIBA EXT/DMC/jpg_coarser/'
+DESTPATH = '/run/media/madi/TOSHIBA EXT/DMC/jpg_coarser/' + os.sep
 # Original resolution
 RES_ORIGINAL = 0.15
 # Current resolution
