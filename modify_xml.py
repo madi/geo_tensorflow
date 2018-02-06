@@ -15,9 +15,12 @@ FILEPATH = '/run/media/madi/TOSHIBA EXT/DMC/jpg_subset/' + os.sep
 # Destination folder
 DESTPATH = '/run/media/madi/TOSHIBA EXT/DMC/jpg_coarser/' + os.sep
 # Original resolution
-RES_ORIGINAL = 0.15
+RES_ORIGINAL = 0.30
 # Current resolution
 RES_CURRENT  = 0.60
+
+DMC = True # Boolean. DMC files have been renamed. So if DMC, the xml 
+# file must be edited to reflect the name change. For other data, put False
 
 #-----------------------------------------------------------------------
 
@@ -31,9 +34,16 @@ def CreateFileList(FILEPATH):
     
 #-----------------------------------------------------------------------
 
-def updateXml(FILENAME, FILEPATH, DESTPATH):
+def updateXml(FILENAME, FILEPATH, DESTPATH, DMC):
     tree = ET.parse(FILEPATH + FILENAME)
     root = tree.getroot()
+    
+    if DMC == True:
+        orig_name = str(root.find("./filename").text)
+        firstPart, secondPart = orig_name.split("_")
+        curr_name = firstPart + "_dmc_" + secondPart
+        root.find("./filename").text = curr_name
+        root.find("./filename").set('updated', 'yes')
 
     # Update size of current image
     orig_img_width = int(root.find("./size/width").text)
@@ -86,7 +96,7 @@ if __name__ == "__main__":
     
     fileList = CreateFileList(FILEPATH)
     for filename in fileList:
-        updateXml(filename, FILEPATH, DESTPATH)
+        updateXml(filename, FILEPATH, DESTPATH, DMC)
         
     print "Updated xml files saved in ", DESTPATH
     
