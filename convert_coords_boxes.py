@@ -1,20 +1,15 @@
 # coding: utf-8
 
-__author__ = "Margherita Di Leo"
-__license__ = "GPL v.3"
-__version__ = "0.1"
-__email__ = "dileomargherita@gmail.com"
-
 import numpy as np
 import os
 import sys
 import pandas as pd
 from osgeo import gdal,ogr,osr
 
-PATH_TO_TEST_IMAGES_DIR = '/home/madi/Projects/models/research/trees_recognition/images/pred/'
-TEST_IMAGE_PATHS = os.path.join(PATH_TO_TEST_IMAGES_DIR, 'aaa_pt604000-4399000.jpg' )
-TEST_CSV_PATH = os.path.join(PATH_TO_TEST_IMAGES_DIR, 'aaa_pt604000-4399000.csv' )
-CSV_REPR_PATH = os.path.join(PATH_TO_TEST_IMAGES_DIR, 'aaa_pt604000-4399000_repr.csv' )
+PATH_TO_TEST_IMAGES_DIR = '/home/madi/TensorFlow_utils/trees_recognition/images/pred_tile/'
+# TEST_IMAGE_PATHS = os.path.join(PATH_TO_TEST_IMAGES_DIR, 'aaa_pt604000-4399000.jpg' )
+# TEST_CSV_PATH = os.path.join(PATH_TO_TEST_IMAGES_DIR, 'aaa_pt604000-4399000.csv' )
+# CSV_REPR_PATH = os.path.join(PATH_TO_TEST_IMAGES_DIR, 'aaa_pt604000-4399000_repr.csv' )
 
 #-------------------------------------------------------------------------------
 
@@ -78,7 +73,7 @@ def writeShapefile(df, outShp, src):
         #print 'Polygon area = ', poly.GetArea()
         #print poly.ExportToWkt()
         feature = ogr.Feature(layer.GetLayerDefn())
-        feature.SetField("class", df.iloc[i].classe)
+        feature.SetField("classe", df.iloc[i].classe)
         feature.SetField("score", df.iloc[i].score)
         # Set the feature geometry using the box
         feature.SetGeometry(poly)
@@ -91,69 +86,113 @@ def writeShapefile(df, outShp, src):
 
 #-------------------------------------------------------------------------------
 
-# create dataframe
-df = pd.read_csv(TEST_IMAGE_PATHS.split(".")[0] + ".csv", \
-                 header = 0, \
-                 names = ['ID','ymax', 'xmin', 'ymin', 'xmax', 'classe', 'score'], \
-                 index_col = 'ID', \
-                 usecols = ['ID','ymax', 'xmin', 'ymin', 'xmax', 'classe', 'score'])
+# Make the conversion
+def Convert(TEST_IMAGE_PATHS, TEST_CSV_PATH, CSV_REPR_PATH, PATH_TO_TEST_IMAGES_DIR):
+    # create dataframe
+    df = pd.read_csv(TEST_IMAGE_PATHS.split(".")[0] + ".csv", \
+                     header = 0, \
+                     names = ['ID','ymax', 'xmin', 'ymin', 'xmax', 'classe', 'score'], \
+                     index_col = 'ID', \
+                     usecols = ['ID','ymax', 'xmin', 'ymin', 'xmax', 'classe', 'score'])
 
-# Remove records having score < 0.10
-df = df.drop(df[df.score < 0.10].index)
+    # Remove records having score < 0.10
+    df = df.drop(df[df.score < 0.10].index)
 
-# The y axis is reversed
-df['ymin'] = df['ymin'].apply(lambda x: 1 - x)
-df['ymax'] = df['ymax'].apply(lambda x: 1 - x)
+    # The y axis is reversed
+    df['ymin'] = df['ymin'].apply(lambda x: 1 - x)
+    df['ymax'] = df['ymax'].apply(lambda x: 1 - x)
 
-# Retrieve coordinates and src of image corners
-raster = TEST_IMAGE_PATHS
-ds = gdal.Open(raster)
-gt = ds.GetGeoTransform()
-cols = ds.RasterXSize
-rows = ds.RasterYSize
-ext = GetExtent(gt,cols,rows)
-wkt = ds.GetProjection()
-src = osr.SpatialReference()
-src.ImportFromWkt(wkt)
+    # Retrieve coordinates and src of image corners
+    raster = TEST_IMAGE_PATHS
+    ds = gdal.Open(raster)
+    gt = ds.GetGeoTransform()
+    cols = ds.RasterXSize
+    rows = ds.RasterYSize
+    ext = GetExtent(gt,cols,rows)
+    wkt = ds.GetProjection()
+    src = osr.SpatialReference()
+    src.ImportFromWkt(wkt)
 
-# write file
-fileCSV = open(CSV_REPR_PATH, "w")
-fileCSV.write("ID, ymax, xmin, ymin, xmax, class, score" + "\n")
-coords = []
-reprojected = []
-for i in range(len(df)):
-    coord = [[df.xmin[i],df.ymin[i]], [df.xmax[i],df.ymax[i]]]
-    coords.append(coord)
-    # Perform coordinate conversion of boxes
-    repr = ReprojectCoords(coord, ext)
-    rep = [i, repr, df.classe[i], df.score[i]]
-    reprojected.append(rep)
-    # write csv
-    fileCSV.write("%s" % i)
-    fileCSV.write(",")
-    fileCSV.write("%s" % repr[0][0])
-    fileCSV.write(",")
-    fileCSV.write("%s" % repr[0][1])
-    fileCSV.write(",")
-    fileCSV.write("%s" % repr[0][2])
-    fileCSV.write(",")
-    fileCSV.write("%s" % repr[0][3])
-    fileCSV.write(",")
-    fileCSV.write("%s" % df.classe[i])
-    fileCSV.write(",")
-    fileCSV.write("%s" % df.score[i])
-    fileCSV.write("\n")
+    # write file
+    fileCSV = open(CSV_REPR_PATH, "w")
+    fileCSV.write("ID, ymax, xmin, ymin, xmax, classe, score" + "\n")
+    coords = []
+    reprojected = []
+    for i in range(len(df)):
+        coord = [[df.xmin[i],df.ymin[i]], [df.xmax[i],df.ymax[i]]]
+        coords.append(coord)
+        # Perform coordinate conversion of boxes
+        repr = ReprojectCoords(coord, ext)
+        rep = [i, repr, df.classe[i], df.score[i]]
+        reprojected.append(rep)
+        # write csv
+        fileCSV.write("%s" % i)
+        fileCSV.write(",")
+        fileCSV.write("%s" % repr[0][0])
+        fileCSV.write(",")
+        fileCSV.write("%s" % repr[0][1])
+        fileCSV.write(",")
+        fileCSV.write("%s" % repr[0][2])
+        fileCSV.write(",")
+        fileCSV.write("%s" % repr[0][3])
+        fileCSV.write(",")
+        fileCSV.write("%s" % df.classe[i])
+        fileCSV.write(",")
+        fileCSV.write("%s" % df.score[i])
+        fileCSV.write("\n")
 
-fileCSV.close()
+    fileCSV.close()
 
-# Import clean dataframe
-# create dataframe
-df = pd.read_csv(CSV_REPR_PATH, \
-                 header = 0, \
-                 names = ['ID','ymax', 'xmin', 'ymin', 'xmax', 'classe', 'score'], \
-                 index_col = 'ID', \
-                 usecols = ['ID','ymax', 'xmin', 'ymin', 'xmax', 'classe', 'score'])
+    # Import clean dataframe
+    # create dataframe
+    df = pd.read_csv(CSV_REPR_PATH, \
+                     header = 0, \
+                     names = ['ID','ymax', 'xmin', 'ymin', 'xmax', 'classe', 'score'], \
+                     index_col = 'ID', \
+                     usecols = ['ID','ymax', 'xmin', 'ymin', 'xmax', 'classe', 'score'])
 
-# Create shapefile
-outShp = os.path.join(PATH_TO_TEST_IMAGES_DIR, TEST_IMAGE_PATHS.split(".")[0]) + ".shp"
-writeShapefile(df, outShp, src)
+    # Create shapefile
+    outShp = os.path.join(PATH_TO_TEST_IMAGES_DIR, TEST_IMAGE_PATHS.split(".")[0]) + ".shp"
+    writeShapefile(df, outShp, src)
+    print "Shapefile written in ", outShp
+
+#-------------------------------------------------------------------------------
+
+def CreateFileList(FILEPATH):
+    for filename in os.listdir(str(FILEPATH)):
+        if filename.endswith(".jpg") and "aux" not in filename:
+            fileList.append(filename.split(".")[0])
+    fileList.sort()
+    print fileList
+    return fileList
+    
+#-------------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    # loop over files in folder    
+    os.chdir(PATH_TO_TEST_IMAGES_DIR)
+
+    fileList = []
+    
+    fileList = CreateFileList(PATH_TO_TEST_IMAGES_DIR)
+    for filename in fileList:
+        TEST_IMAGE_PATHS = os.path.join(PATH_TO_TEST_IMAGES_DIR, filename + '.jpg' )
+        TEST_CSV_PATH = os.path.join(PATH_TO_TEST_IMAGES_DIR, filename + '.csv' )
+        CSV_REPR_PATH = os.path.join(PATH_TO_TEST_IMAGES_DIR, filename + '_repr.csv' )
+        Convert(TEST_IMAGE_PATHS, TEST_CSV_PATH, CSV_REPR_PATH, PATH_TO_TEST_IMAGES_DIR)
+        
+   
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
